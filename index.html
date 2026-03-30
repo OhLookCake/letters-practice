@@ -137,17 +137,18 @@
       <span class="setting-label">Vowels</span>
       <div class="setting-options" data-setting="vowel-count">
         <button class="setting-option" data-value="3">3V</button>
-        <button class="setting-option active" data-value="4">4V</button>
+        <button class="setting-option" data-value="4">4V</button>
         <button class="setting-option" data-value="5">5V</button>
+        <button class="setting-option active" data-value="random">?</button>
       </div>
     </div>
     <div class="setting-row">
       <span class="setting-label">Sort</span>
       <div class="setting-options" data-setting="sort-order">
-        <button class="setting-option active" data-value="random">Random</button>
-        <button class="setting-option" data-value="alpha">A-Z</button>
+        <button class="setting-option active" data-value="alpha">A-Z</button>
         <button class="setting-option" data-value="vowels-first">V first</button>
         <button class="setting-option" data-value="consonants-first">C first</button>
+        <button class="setting-option" data-value="random">?</button>
       </div>
     </div>
   </div>
@@ -281,7 +282,8 @@
       if (e.code !== 'Space') return;
       e.preventDefault();
 
-      const vowelCount = parseInt(document.querySelector('[data-setting="vowel-count"] .active').dataset.value);
+      const vowelSetting = document.querySelector('[data-setting="vowel-count"] .active').dataset.value;
+      const vowelCount = vowelSetting === 'random' ? [3, 4, 5][Math.floor(Math.random() * 3)] : parseInt(vowelSetting);
       const sortOrder = document.querySelector('[data-setting="sort-order"] .active').dataset.value;
 
       if (state === 'blank' || state === 'solutions') {
