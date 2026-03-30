@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Letters Practice</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #settings {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #16213e;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .setting-label {
+      color: #a0a0b0;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    .setting-options {
+      display: flex;
+    }
+
+    .setting-option {
+      background: none;
+      border: 1px solid #333;
+      color: #666;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .setting-option:first-child {
+      border-radius: 4px 0 0 4px;
+    }
+
+    .setting-option:last-child {
+      border-radius: 0 4px 4px 0;
+    }
+
+    .setting-option + .setting-option {
+      border-left: none;
+    }
+
+    .setting-option.active {
+      background: #0f3460;
+      color: #e0e0e0;
+      border-color: #53d8fb;
+    }
+
+    #letters-display {
+      display: flex;
+      gap: 12px;
+      margin-top: 30vh;
+      margin-bottom: 40px;
+    }
+
+    .letter-tile {
+      width: 64px;
+      height: 64px;
+      background: #0f3460;
+      border: 2px solid #fff;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Century Gothic', Futura, Helvetica, Verdana, sans-serif;
+      font-size: 32px;
+      font-weight: bold;
+      color: #fff;
+      text-transform: uppercase;
+    }
+
+
+    #solutions {
+      text-align: center;
+      min-height: 200px;
+    }
+
+    #solutions h3 {
+      color: #a0a0b0;
+      margin-bottom: 12px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    #solutions .word {
+      font-family: 'Century Gothic', Futura, Helvetica, Verdana, sans-serif;
+      font-weight: bold;
+      font-size: 22px;
+      margin: 6px 0;
+      color: #53d8fb;
+    }
+
+    #prompt {
+      position: fixed;
+      bottom: 30px;
+      color: #555;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="settings">
+    <div class="setting-row">
+      <span class="setting-label">Vowels</span>
+      <div class="setting-options" data-setting="vowel-count">
+        <button class="setting-option" data-value="3">3V</button>
+        <button class="setting-option active" data-value="4">4V</button>
+        <button class="setting-option" data-value="5">5V</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Sort</span>
+      <div class="setting-options" data-setting="sort-order">
+        <button class="setting-option active" data-value="random">Random</button>
+        <button class="setting-option" data-value="alpha">A-Z</button>
+        <button class="setting-option" data-value="vowels-first">V first</button>
+        <button class="setting-option" data-value="consonants-first">C first</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="letters-display"></div>
+  <div id="solutions"></div>
+  <div id="prompt">press space</div>
+
+  <script src="wordlist.js"></script>
+  <script>
+    // --- Letter distributions (placeholder weights) ---
+    const VOWEL_DIST = {
+      'a': 15, 'e': 21, 'i': 13, 'o': 13, 'u': 5
+    };
+
+    const CONSONANT_DIST = {
+      'b': 2, 'c': 3, 'd': 6, 'f': 2, 'g': 3,
+      'h': 2, 'j': 1, 'k': 1, 'l': 5, 'm': 4,
+      'n': 8, 'p': 4, 'q': 1, 'r': 9, 's': 9,
+      't': 9, 'v': 1, 'w': 1, 'x': 1, 'y': 1, 'z': 1
+    };
+
+    const VOWELS_SET = new Set(Object.keys(VOWEL_DIST));
+
+    // --- Weighted random pick ---
+    function weightedPick(dist) {
+      const entries = Object.entries(dist);
+      const total = entries.reduce((s, [, w]) => s + w, 0);
+      let r = Math.random() * total;
+      for (const [letter, weight] of entries) {
+        r -= weight;
+        if (r <= 0) return letter;
+      }
+      return entries[entries.length - 1][0];
+    }
+
+    // --- Generate letters ---
+    function generateLetters(vowelCount) {
+      const letters = [];
+      for (let i = 0; i < vowelCount; i++) letters.push(weightedPick(VOWEL_DIST));
+      for (let i = 0; i < 9 - vowelCount; i++) letters.push(weightedPick(CONSONANT_DIST));
+      return letters;
+    }
+
+    // --- Sort letters ---
+    function sortLetters(letters, order) {
+      const arr = [...letters];
+      if (order === 'alpha') {
+        arr.sort();
+      } else if (order === 'vowels-first') {
+        arr.sort((a, b) => {
+          const av = VOWELS_SET.has(a) ? 0 : 1;
+          const bv = VOWELS_SET.has(b) ? 0 : 1;
+          if (av !== bv) return av - bv;
+          return a.localeCompare(b);
+        });
+      } else if (order === 'consonants-first') {
+        arr.sort((a, b) => {
+          const av = VOWELS_SET.has(a) ? 1 : 0;
+          const bv = VOWELS_SET.has(b) ? 1 : 0;
+          if (av !== bv) return av - bv;
+          return a.localeCompare(b);
+        });
+      }
+      // 'random' => no sorting, already random from generation
+      return arr;
+    }
+
+    // --- Find words that can be made from given letters ---
+    function findWords(letters) {
+      const available = {};
+      for (const l of letters) {
+        available[l] = (available[l] || 0) + 1;
+      }
+
+      const results = [];
+      for (const word of WORDLIST) {
+        const needed = {};
+        let valid = true;
+        for (const ch of word) {
+          needed[ch] = (needed[ch] || 0) + 1;
+          if ((needed[ch] || 0) > (available[ch] || 0)) {
+            valid = false;
+            break;
+          }
+        }
+        if (valid) results.push(word);
+      }
+
+      // Sort by length descending, then alphabetically
+      results.sort((a, b) => b.length - a.length || a.localeCompare(b));
+      return results.slice(0, 10);
+    }
+
+    // --- Render ---
+    function renderLetters(letters) {
+      const container = document.getElementById('letters-display');
+      container.innerHTML = '';
+      for (const l of letters) {
+        const tile = document.createElement('div');
+        tile.className = 'letter-tile';
+        tile.textContent = l;
+        container.appendChild(tile);
+      }
+    }
+
+    function renderSolutions(words) {
+      const container = document.getElementById('solutions');
+      if (words.length === 0) {
+        container.innerHTML = '<h3>No words found</h3>';
+        return;
+      }
+      let html = '<h3>Longest words</h3>';
+      for (const w of words) {
+        html += `<div class="word">${w.toUpperCase()} <span style="color:#555;font-size:14px">(${w.length})</span></div>`;
+      }
+      container.innerHTML = html;
+    }
+
+    function clearDisplay() {
+      document.getElementById('letters-display').innerHTML = '';
+      document.getElementById('solutions').innerHTML = '';
+    }
+
+    // --- State machine ---
+    // States: 'blank' -> 'letters' -> 'solutions' -> 'letters' -> ...
+    let state = 'blank';
+    let currentLetters = [];
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code !== 'Space') return;
+      e.preventDefault();
+
+      const vowelCount = parseInt(document.querySelector('[data-setting="vowel-count"] .active').dataset.value);
+      const sortOrder = document.querySelector('[data-setting="sort-order"] .active').dataset.value;
+
+      if (state === 'blank' || state === 'solutions') {
+        // Generate new letters
+        const raw = generateLetters(vowelCount);
+        currentLetters = sortLetters(raw, sortOrder);
+        document.getElementById('solutions').innerHTML = '';
+        renderLetters(currentLetters);
+        document.getElementById('prompt').textContent = 'press space for solutions';
+        state = 'letters';
+      } else if (state === 'letters') {
+        // Show solutions
+        const words = findWords(currentLetters);
+        renderSolutions(words);
+        document.getElementById('prompt').textContent = 'press space for new letters';
+        state = 'solutions';
+      }
+    });
+
+    // --- Settings toggle buttons ---
+    document.querySelectorAll('.setting-options').forEach(group => {
+      group.addEventListener('click', (e) => {
+        const btn = e.target.closest('.setting-option');
+        if (!btn) return;
+        group.querySelectorAll('.setting-option').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
