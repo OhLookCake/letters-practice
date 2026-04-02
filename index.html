@@ -89,7 +89,12 @@
           return a.localeCompare(b);
         });
       }
-      // 'random' => no sorting, already random from generation
+      if (order === 'random') {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
       return arr;
     }
 
@@ -192,6 +197,11 @@
         if (!btn) return;
         group.querySelectorAll('.setting-option').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+
+        if (group.dataset.setting === 'sort-order' && state === 'letters' && currentLetters.length) {
+          currentLetters = sortLetters(currentLetters, btn.dataset.value);
+          renderLetters(currentLetters);
+        }
       });
     });
   </script>
