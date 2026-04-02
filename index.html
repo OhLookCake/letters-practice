@@ -31,7 +31,7 @@
 
   <div id="letters-display"></div>
   <div id="solutions"></div>
-  <div id="prompt">press space</div>
+  <div id="prompt">press space or tap</div>
 
   <script src="./wordlist.js"></script>
   <script>
@@ -154,29 +154,35 @@
     let state = 'blank';
     let currentLetters = [];
 
-    document.addEventListener('keydown', (e) => {
-      if (e.code !== 'Space') return;
-      e.preventDefault();
-
+    function advance() {
       const vowelSetting = document.querySelector('[data-setting="vowel-count"] .active').dataset.value;
       const vowelCount = vowelSetting === 'random' ? [3, 4, 5][Math.floor(Math.random() * 3)] : parseInt(vowelSetting);
       const sortOrder = document.querySelector('[data-setting="sort-order"] .active').dataset.value;
 
       if (state === 'blank' || state === 'solutions') {
-        // Generate new letters
         const raw = generateLetters(vowelCount);
         currentLetters = sortLetters(raw, sortOrder);
         document.getElementById('solutions').innerHTML = '';
         renderLetters(currentLetters);
-        document.getElementById('prompt').textContent = 'press space for solutions';
+        document.getElementById('prompt').textContent = 'press space or tap for solutions';
         state = 'letters';
       } else if (state === 'letters') {
-        // Show solutions
         const words = findWords(currentLetters);
         renderSolutions(words);
-        document.getElementById('prompt').textContent = 'press space for new letters';
+        document.getElementById('prompt').textContent = 'press space or tap for new letters';
         state = 'solutions';
       }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code !== 'Space') return;
+      e.preventDefault();
+      advance();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('#settings')) return;
+      advance();
     });
 
     // --- Settings toggle buttons ---
